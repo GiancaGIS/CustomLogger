@@ -16,9 +16,17 @@ namespace CustomLogger
             this.pathFile = path;
         }
 
-        public Task LogAsync(string messaggio, string intestazione)
+        public void LogSync(string messaggio, string intestazione)
         {
-            return new Task(() =>
+            using (System.IO.StreamWriter file = new System.IO.StreamWriter(this.pathFile, true))
+            {
+                file.WriteLine($"{intestazione} {messaggio}");
+            }
+        }
+
+        public void LogAsync(string messaggio, string intestazione)
+        {
+            new Task(() =>
             {
                 try
                 {
@@ -29,7 +37,7 @@ namespace CustomLogger
                         {
                             using (System.IO.StreamWriter file = new System.IO.StreamWriter(this.pathFile, true))
                             {
-                                file.WriteLine($"{intestazione}: {messaggio}");
+                                file.WriteLine($"{intestazione} {messaggio}");
                             }
                         }
                         catch (AggregateException ex)
@@ -46,15 +54,19 @@ namespace CustomLogger
                 {
                     Monitor.Exit(objLock);
                 }
-            }, TaskCreationOptions.None);
+            }, TaskCreationOptions.None).Wait();
         }
     }
 
     public class LogHelper
     {
         private readonly string pathFile = string.Empty;
-        public LogHelper(string path)
+        private readonly bool isAsync = false;
+
+        public LogHelper(string path, bool async = false)
         {
+            this.isAsync = async;
+
             if (!Directory.Exists(System.IO.Path.GetDirectoryName(path)))
                 throw new ArgumentException("La path al file specificato non esiste!");
 
@@ -70,28 +82,32 @@ namespace CustomLogger
         /// </summary>
         /// <param name="message"></param>
         /// <returns></returns>
-        public Task LogInfoAsync(string message)
+        public void LogInfo(string message)
         {
             logger = new FileLogger(this.pathFile);
-            return logger.LogAsync(message, $"[{DateTime.Now}] - Info:");
+            if (this.isAsync) logger.LogAsync(message, $"[{DateTime.Now}]|Info|:");
+            else logger.LogSync(message, $"[{DateTime.Now}]|Info|:");
         }
 
-        public Task LogDebugAsync(string message)
+        public void LogDebug(string message)
         {
             logger = new FileLogger(this.pathFile);
-            return logger.LogAsync(message, $"[{DateTime.Now}] - Debug:");
+            if (this.isAsync) logger.LogAsync(message, $"[{DateTime.Now}]|Debug|:");
+            else logger.LogSync(message, $"[{DateTime.Now}]|Debug|:");
         }
 
-        public Task LogWarningAsync(string message)
+        public void LogWarning(string message)
         {
             logger = new FileLogger(this.pathFile);
-            return logger.LogAsync(message, $"[{DateTime.Now}] - Warning:");
+            if (this.isAsync) logger.LogAsync(message, $"[{DateTime.Now}]|Warning|:");
+            else logger.LogSync(message, $"[{DateTime.Now}]|Warning|:");
         }
 
-        public Task LogErrorAsync(string message)
+        public void LogError(string message)
         {
             logger = new FileLogger(this.pathFile);
-            return logger.LogAsync(message, $"[{DateTime.Now}] - Error:");
+            if (this.isAsync) logger.LogAsync(message, $"[{DateTime.Now}]|Error|:");
+            else logger.LogSync(message, $"[{DateTime.Now}]|Error|:");
         }
     }
 }
