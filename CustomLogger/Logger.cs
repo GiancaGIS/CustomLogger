@@ -103,12 +103,14 @@ namespace CustomLogger
         /// </summary>
         public void EseguiTuttiTaskScritturaLog()
         {
-            this.ListaTaskScritturaLog.ForEach(task =>
+            for (int contatore = 0; contatore < this.ListaTaskScritturaLog.Count; contatore += 1)
             {
+                Task task = this.ListaTaskScritturaLog[contatore];
                 task.Start();
                 task.Wait();
-            });
-
+                this.ListaTaskScritturaLog.RemoveAt(contatore);
+                contatore -= 1;
+            }
         }
 
         /// <summary>
